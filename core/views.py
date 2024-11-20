@@ -54,17 +54,15 @@ def edit_user_profile(request, uid):
             user_profile = UserProfile.objects.get(uid=uid)
             data = json.loads(request.body)
 
+            # Use .get() with default values to prevent KeyError
             user_profile.name = data.get("name", user_profile.name)
-            user_profile.email = data.get("email", user_profile.email)
-            user_profile.profile_picture = data.get("profile_picture", user_profile.profile_picture)
-            user_profile.next_period = data.get("next_period", user_profile.next_period)
-            user_profile.cycle_length = data.get("cycle_length", user_profile.cycle_length)
             user_profile.last_period = data.get("last_period", user_profile.last_period)
-            user_profile.tracked_cycles = data.get("tracked_cycles", user_profile.tracked_cycles)
-            user_profile.logged_symptoms = data.get("logged_symptoms", user_profile.logged_symptoms)
+            user_profile.cycle_length = data.get("cycle_length", user_profile.cycle_length)
+            user_profile.next_period = data.get("next_period", user_profile.next_period)
+            
             user_profile.save()
 
-            return JsonResponse({"status": "success"}, status=200)
+            return JsonResponse({"status": "success", "message": "Profile updated"}, status=200)
         except UserProfile.DoesNotExist:
             return JsonResponse({"error": "User profile not found"}, status=404)
-        
+    return JsonResponse({"error": "Invalid request method"}, status=400)
