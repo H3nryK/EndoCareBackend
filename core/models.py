@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.timezone import timedelta
 
 class UserProfile(models.Model):
     uid = models.CharField(max_length=100, unique=True)
@@ -13,3 +14,8 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return self.email
+
+    def save(self, *args, **kwargs):
+        if self.last_period and self.cycle_length:
+            self.next_period = self.last_period + timedelta(days=self.cycle_length)
+        super().save(*args, **kwargs)
