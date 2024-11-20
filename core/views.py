@@ -1,7 +1,8 @@
 from django.http import JsonResponse
-from .models import UserProfile
+from .models import *
 from .firebase import auth
 import json
+from django.views.decorators.http import require_http_methods
 
 def sync_user_data(request, uid):
     try:
@@ -66,3 +67,127 @@ def edit_user_profile(request, uid):
         except UserProfile.DoesNotExist:
             return JsonResponse({"error": "User profile not found"}, status=404)
     return JsonResponse({"error": "Invalid request method"}, status=400)
+
+@require_http_methods(["POST"])
+def add_medication(request, uid):
+    try:
+        # Find the user profile
+        user_profile = UserProfile.objects.get(uid=uid)
+        
+        # Parse request data
+        data = json.loads(request.body)
+        
+        # Create medication
+        medication = Medication.objects.create(
+            user_profile=user_profile,
+            name=data.get('name', ''),
+            dosage=data.get('dosage', ''),
+            frequency=data.get('frequency', ''),
+            notify=data.get('notify', False)
+        )
+        
+        return JsonResponse({
+            'status': 'success', 
+            'medication': {
+                'id': medication.id,
+                'name': medication.name,
+                'dosage': medication.dosage,
+                'frequency': medication.frequency,
+                'notify': medication.notify
+            }
+        }, status=201)
+    
+    except UserProfile.DoesNotExist:
+        return JsonResponse({'error': 'User profile not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+@require_http_methods(["GET"])
+def get_medications(request, uid):
+    try:
+        # Find the user profile
+        user_profile = UserProfile.objects.get(uid=uid)
+        
+        # Get all medications for this user
+        medications = Medication.objects.filter(user_profile=user_profile)
+        
+        # Convert to list of dictionaries
+        medication_list = [{
+            'id': med.id,
+            'name': med.name,
+            'dosage': med.dosage,
+            'frequency': med.frequency,
+            'notify': med.notify
+        } for med in medications]
+        
+        return JsonResponse({
+            'status': 'success', 
+            'medications': medication_list
+        }, status=200)
+    
+    except UserProfile.DoesNotExist:
+        return JsonResponse({'error': 'User profile not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+@require_http_methods(["POST"])
+def add_appointment(request, uid):
+    try:
+        # Find the user profile
+        user_profile = UserProfile.objects.get(uid=uid)
+        
+        # Parse request data
+        data = json.loads(request.body)
+        
+        # Create appointment
+        appointment = Appointment.objects.create(
+            user_profile=user_profile,
+            doctor=data.get('doctor', ''),
+            location=data.get('location', ''),
+            date=data.get('date', None),
+            notify=data.get('notify', False)
+        )
+        
+        return JsonResponse({
+            'status': 'success', 
+            'appointment': {
+                'id': appointment.id,
+                'doctor': appointment.doctor,
+                'location': appointment.location,
+                'date': str(appointment.date),
+                'notify': appointment.notify
+            }
+        }, status=201)
+    
+    except UserProfile.DoesNotExist:
+        return JsonResponse({'error': 'User profile not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+@require_http_methods(["GET"])
+def get_appointments(request, uid):
+    try:
+        # Find the user profile
+        user_profile = UserProfile.objects.get(uid=uid)
+        
+        # Get all appointments for this user
+        appointments = Appointment.objects.filter(user_profile=user_profile)
+        
+        # Convert to list of dictionaries
+        appointment_list = [{
+            'id': appt.id,
+            'doctor': appt.doctor,
+            'location': appt.location,
+            'date': str(appt.date),
+            'notify': appt.notify
+        } for appt in appointments]
+        
+        return JsonResponse({
+            'status': 'success', 
+            'appointments': appointment_list
+        }, status=200)
+    
+    except UserProfile.DoesNotExist:
+        return JsonResponse({'error': 'User profile not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
