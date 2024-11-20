@@ -44,7 +44,7 @@ INSTALLED_APPS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'your_app_name.authentication.FirebaseAuthentication',
+        'core.authentication.FirebaseAuthentication',
     ],
 }
 
@@ -131,6 +131,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+FIREBASE_CREDENTIALS_PATH = 'firebase-credentials.json'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
