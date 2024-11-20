@@ -3,6 +3,7 @@ from .models import *
 from .firebase import auth
 import json
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
 
 def sync_user_data(request, uid):
     try:
@@ -68,6 +69,7 @@ def edit_user_profile(request, uid):
             return JsonResponse({"error": "User profile not found"}, status=404)
     return JsonResponse({"error": "Invalid request method"}, status=400)
 
+@csrf_exempt
 @require_http_methods(["POST"])
 def add_medication(request, uid):
     try:

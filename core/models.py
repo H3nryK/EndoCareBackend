@@ -6,9 +6,9 @@ class UserProfile(models.Model):
     name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     profile_picture = models.URLField(null=True, blank=True)
-    next_period = models.CharField(max_length=50, default="Not set")
-    cycle_length = models.CharField(max_length=50, default="Not set")
-    last_period = models.CharField(max_length=50, default="Not set")
+    next_period = models.FloatField()
+    cycle_length = models.FloatField()
+    last_period = models.FloatField()
     tracked_cycles = models.IntegerField(default=0)
     logged_symptoms = models.IntegerField(default=0)
 
@@ -17,7 +17,7 @@ class UserProfile(models.Model):
 
     def save(self, *args, **kwargs):
         if self.last_period and self.cycle_length:
-            self.next_period = self.last_period + timedelta(days=self.cycle_length)
+            self.next_period = self.last_period + timedelta(days=float(self.cycle_length))
         super().save(*args, **kwargs)
 
 class Medication(models.Model):
