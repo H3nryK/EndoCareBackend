@@ -1,48 +1,28 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from .models import User
-from .serializers import UserSerializer
-from .firebase import verify_firebase_token
+from django.http import JsonResponse
+from .models import UserProfile
+from .firebase import auth
 
-class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+def sync_user_data(request, uid):
+    try:
+        # Fetch user details from Firebase
+        user_record = auth.get_user(uid)
+        user_data = {
+            "uid": user_record.uid,
+            "name": user_record.display_name,
+            "email": user_record.email,
+            "profile_picture": user_record.photo_url,
+        }
 
-    @action(detail=False, methods=['POST'])
-    def register(self, request):
-        firebase_token = request.headers.get('Firebase-Token')
-        if not firebase_token:
-            return Response(
-                {'error': 'Firebase token is required'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        decoded_token = verify_firebase_token(firebase_token)
-        if not decoded_token:
-            return Response(
-                {'error': 'Invalid Firebase token'}, 
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-
-        firebase_uid = decoded_token['uid']
-        email = decoded_token.get('email')
-
-        # Create or update user
-        user, created = User.objects.get_or_create(
-            firebase_uid=firebase_uid,
+        # Update or create the user profile
+        user, created = UserProfile.objects.update_or_create(
+            uid=user_data["uid"],
             defaults={
-                'email': email,
-                'username': email  # You might want to modify this
-            }
+                "name": user_data["name"],
+                "email": user_data["email"],
+                "profile_picture": user_data["profile_picture"],
+            },
         )
 
-        serializer = self.get_serializer(user)
-        return Response(serializer.data)
-
-    @action(detail=False, methods=['GET'])
-    def me(self, request):
-        serializer = self.get_serializer(request.user)
-        return Response(serializer.data)
+        return JsonResponse({"status": "success", "user": user_data}, status=200)
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=400)
