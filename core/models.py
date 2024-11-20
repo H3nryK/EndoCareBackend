@@ -69,7 +69,7 @@ class Quizes(models.Model):
     user_profile = models.ForeignKey('UserProfile', on_delete=models.CASCADE, related_name='quizes')
     quiz_name = models.CharField(max_length=200)
     quiz_score = models.IntegerField()
-    quiz_answers = models.JSONField()
+    quiz_answers = models.JSONField(default=list, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

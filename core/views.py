@@ -308,8 +308,3 @@ def save_endobot_message(request):
             'status': 'error', 
             'message': str(e)
         }, status=500)
-
-@csrf_exempt
-@require_http_methods(["POST"])
-def save_quizes(request, uid):
-    
