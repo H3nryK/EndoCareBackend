@@ -9,4 +9,7 @@ urlpatterns = [
     path('medications/get/<str:uid>/', views.get_medications, name='get_medications'),
     path('appointments/add/<str:uid>/', views.add_appointment, name='add_appointment'),
     path('appointments/get/<str:uid>/', views.get_appointments, name='get_appointments'),
+    path('periods/set/<str:uid>/', views.set_periods, name='set_periods'),
+    path('periods/get/<str:uid>/', views.get_periods, name='get_periods'),
+    path('save-endobot-message/', views.save_endobot_message, name='save_endobot_message'),
 ]
