@@ -43,3 +43,54 @@ class Appointment(models.Model):
 
     def __str__(self):
         return f"Appointment with {self.doctor} on {self.date}"
+
+class Periods(models.Model):
+    user_profile = models.ForeignKey('UserProfile', on_delete=models.CASCADE, related_name='periods')
+    start_date = models.DateField()
+    cycle_length = models.FloatField()
+    period_duration = models.FloatField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Periods for {self.user_profile.name} on {self.start_date}"
+    
+class EndoBot(models.Model):
+    user_profile = models.ForeignKey('UserProfile', on_delete=models.CASCADE, related_name='endo_bot', null=True, blank=True)
+    bot = models.CharField(max_length=200, default="EndoBot", null=True, blank=True)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"EndoBot message for {self.message} on {self.created_at}"
+    
+class Quizes(models.Model):
+    user_profile = models.ForeignKey('UserProfile', on_delete=models.CASCADE, related_name='quizes')
+    quiz_name = models.CharField(max_length=200)
+    quiz_answer = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Quiz for {self.user_profile.name} on {self.quiz_name}"
+    
+class Stories(models.Model):
+    user_profile = models.ForeignKey('UserProfile', on_delete=models.CASCADE, related_name='stories')
+    story_title = models.CharField(max_length=200)
+    story = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Story for {self.user_profile.name} on {self.story_title}"
+
+class Symptom(models.Model):
+    user_profile = models.ForeignKey('UserProfile', on_delete=models.CASCADE, related_name='symptoms')
+    symptom_name = models.CharField(max_length=200)
+    symptom_description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Symptom for {self.user_profile.name} on {self.symptom_name}"

@@ -104,6 +104,7 @@ def add_medication(request, uid):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 
+@csrf_exempt
 @require_http_methods(["GET"])
 def get_medications(request, uid):
     try:
@@ -132,6 +133,7 @@ def get_medications(request, uid):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 
+@csrf_exempt
 @require_http_methods(["POST"])
 def add_appointment(request, uid):
     try:
@@ -166,6 +168,7 @@ def add_appointment(request, uid):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 
+@csrf_exempt
 @require_http_methods(["GET"])
 def get_appointments(request, uid):
     try:
