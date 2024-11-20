@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-y5(mx3#)08v*%r+&xd=$ui)@qt64^6f4-z&j^vhv=+@7bbal1y
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['192.168.100.2', '127.0.0.1']
 
 
 # Application definition
@@ -63,6 +63,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:8080",  
 ]
+
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'EndoCare.urls'
 
