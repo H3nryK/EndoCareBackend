@@ -3,6 +3,7 @@ from .models import *
 from .firebase import auth
 import json
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
 
 def sync_user_data(request, uid):
     try:
@@ -38,11 +39,6 @@ def get_user_profile(request, uid):
                 "name": user_profile.name,
                 "email": user_profile.email,
                 "profile_picture": user_profile.profile_picture,
-                "next_period": user_profile.next_period,
-                "cycle_length": user_profile.cycle_length,
-                "last_period": user_profile.last_period,
-                "tracked_cycles": user_profile.tracked_cycles,
-                "logged_symptoms": user_profile.logged_symptoms,
             }
             return JsonResponse(data, status=200)
         except UserProfile.DoesNotExist:
@@ -57,9 +53,6 @@ def edit_user_profile(request, uid):
 
             # Use .get() with default values to prevent KeyError
             user_profile.name = data.get("name", user_profile.name)
-            user_profile.last_period = data.get("last_period", user_profile.last_period)
-            user_profile.cycle_length = data.get("cycle_length", user_profile.cycle_length)
-            user_profile.next_period = data.get("next_period", user_profile.next_period)
             
             user_profile.save()
 
@@ -68,6 +61,7 @@ def edit_user_profile(request, uid):
             return JsonResponse({"error": "User profile not found"}, status=404)
     return JsonResponse({"error": "Invalid request method"}, status=400)
 
+@csrf_exempt
 @require_http_methods(["POST"])
 def add_medication(request, uid):
     try:
@@ -102,6 +96,7 @@ def add_medication(request, uid):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 
+@csrf_exempt
 @require_http_methods(["GET"])
 def get_medications(request, uid):
     try:
@@ -130,6 +125,7 @@ def get_medications(request, uid):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 
+@csrf_exempt
 @require_http_methods(["POST"])
 def add_appointment(request, uid):
     try:
@@ -164,6 +160,7 @@ def add_appointment(request, uid):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 
+@csrf_exempt
 @require_http_methods(["GET"])
 def get_appointments(request, uid):
     try:
@@ -191,3 +188,166 @@ def get_appointments(request, uid):
         return JsonResponse({'error': 'User profile not found'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def set_periods(request, uid):
+
+    try:
+        user_profile = UserProfile.objects.get(uid=uid)
+
+        # Parse request data
+        data = json.loads(request.body)
+
+        # Create periods
+        periods = Periods.objects.create(
+            user_profile=user_profile,
+            start_date=data.get('start_date', None),
+            cycle_length=data.get('cycle_length', None),
+            period_duration=data.get('period_duration', None),
+        )
+
+        return JsonResponse({
+            'status': 'success',
+            'periods': {
+                'id': periods.id,
+                'start_date': str(periods.start_date),
+                'cycle_length': periods.cycle_length,
+                'period_duration': periods.period_duration,
+            }
+        }, status = 201)
+    
+    except UserProfile.DoesNotExist:
+        return JsonResponse({'error': 'User profile not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+    
+@csrf_exempt
+@require_http_methods(["GET"])
+def get_periods(request, uid):
+    try:
+        # Find the user profile
+        user_profile = UserProfile.objects.get(uid=uid)
+
+        # Get all periods for this user
+        periods = Periods.objects.filter(user_profile=user_profile)
+
+        # Convert to list of dictionaries
+        periods_list = [{
+            'id': period.id,
+            'start_date': str(period.start_date),
+            'cycle_length': period.cycle_length,
+            'period_duration': period.period_duration,
+        } for period in periods]
+
+        return JsonResponse({
+            'status': 'success',
+            'periods': periods_list
+        }, status=200)
+
+    except UserProfile.DoesNotExist:
+        return JsonResponse({'error': 'User profile not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def save_endobot_message(request):
+    try:
+        # Parse the incoming JSON data
+        data = json.loads(request.body)
+        
+        # Extract necessary information
+        user_profile_id = data.get('user_profile_id')
+        message = data.get('message')
+        is_user = data.get('is_user', False)
+
+        # Validate required fields
+        if not user_profile_id or not message:
+            return JsonResponse({
+                'status': 'error', 
+                'message': 'Missing required fields'
+            }, status=400)
+
+        # Retrieve the user profile
+        try:
+            user_profile = UserProfile.objects.get(id=user_profile_id)
+        except UserProfile.DoesNotExist:
+            return JsonResponse({
+                'status': 'error', 
+                'message': 'User profile not found'
+            }, status=404)
+
+        # Create the EndoBot message
+        endobot_message = EndoBot.objects.create(
+            user_profile=user_profile,
+            message=message,
+            bot="EndoBot" if not is_user else "User"
+        )
+
+        return JsonResponse({
+            'status': 'success', 
+            'message_id': endobot_message.id
+        }, status=201)
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'status': 'error', 
+            'message': 'Invalid JSON'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error', 
+            'message': str(e)
+        }, status=500)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def save_quiz(request, uid):
+    try:
+        # Find the user profile
+        user_profile = UserProfile.objects.get(uid=uid)
+        
+        # Parse request data
+        data = json.loads(request.body)
+        
+        # Extract quiz details
+        quiz_name = data.get('quiz_name')
+        quiz_answers = data.get('quiz_answers', [])
+        quiz_score = data.get('quiz_score', 0)
+
+        # Validate required fields
+        if not quiz_name:
+            return JsonResponse({
+                'status': 'error', 
+                'message': 'Quiz name is required'
+            }, status=400)
+
+        # Create quiz record
+        quiz = Quizes.objects.create(
+            user_profile=user_profile,
+            quiz_name=quiz_name,
+            quiz_score=quiz_score,
+            quiz_answers=quiz_answers
+        )
+        
+        return JsonResponse({
+            'status': 'success', 
+            'quiz': {
+                'id': quiz.id,
+                'quiz_name': quiz.quiz_name,
+                'quiz_score': quiz.quiz_score,
+                'created_at': str(quiz.created_at)
+            }
+        }, status=201)
+    
+    except UserProfile.DoesNotExist:
+        return JsonResponse({
+            'status': 'error', 
+            'message': 'User profile not found'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error', 
+            'message': str(e)
+        }, status=400)
