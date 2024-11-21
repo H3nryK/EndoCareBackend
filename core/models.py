@@ -6,19 +6,9 @@ class UserProfile(models.Model):
     name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     profile_picture = models.URLField(null=True, blank=True)
-    next_period = models.FloatField()
-    cycle_length = models.FloatField()
-    last_period = models.FloatField()
-    tracked_cycles = models.IntegerField(default=0)
-    logged_symptoms = models.IntegerField(default=0)
 
     def __str__(self):
         return self.email
-
-    def save(self, *args, **kwargs):
-        if self.last_period and self.cycle_length:
-            self.next_period = self.last_period + timedelta(days=float(self.cycle_length))
-        super().save(*args, **kwargs)
 
 class Medication(models.Model):
     user_profile = models.ForeignKey('UserProfile', on_delete=models.CASCADE, related_name='medications')
@@ -68,7 +58,7 @@ class EndoBot(models.Model):
 class Quizes(models.Model):
     user_profile = models.ForeignKey('UserProfile', on_delete=models.CASCADE, related_name='quizes')
     quiz_name = models.CharField(max_length=200)
-    quiz_score = models.IntegerField()
+    quiz_score = models.IntegerField(null=True, blank=True)
     quiz_answers = models.JSONField(default=list, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

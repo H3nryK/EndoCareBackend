@@ -39,11 +39,6 @@ def get_user_profile(request, uid):
                 "name": user_profile.name,
                 "email": user_profile.email,
                 "profile_picture": user_profile.profile_picture,
-                "next_period": user_profile.next_period,
-                "cycle_length": user_profile.cycle_length,
-                "last_period": user_profile.last_period,
-                "tracked_cycles": user_profile.tracked_cycles,
-                "logged_symptoms": user_profile.logged_symptoms,
             }
             return JsonResponse(data, status=200)
         except UserProfile.DoesNotExist:
@@ -58,9 +53,6 @@ def edit_user_profile(request, uid):
 
             # Use .get() with default values to prevent KeyError
             user_profile.name = data.get("name", user_profile.name)
-            user_profile.last_period = data.get("last_period", user_profile.last_period)
-            user_profile.cycle_length = data.get("cycle_length", user_profile.cycle_length)
-            user_profile.next_period = data.get("next_period", user_profile.next_period)
             
             user_profile.save()
 
@@ -308,3 +300,54 @@ def save_endobot_message(request):
             'status': 'error', 
             'message': str(e)
         }, status=500)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def save_quiz(request, uid):
+    try:
+        # Find the user profile
+        user_profile = UserProfile.objects.get(uid=uid)
+        
+        # Parse request data
+        data = json.loads(request.body)
+        
+        # Extract quiz details
+        quiz_name = data.get('quiz_name')
+        quiz_answers = data.get('quiz_answers', [])
+        quiz_score = data.get('quiz_score', 0)
+
+        # Validate required fields
+        if not quiz_name:
+            return JsonResponse({
+                'status': 'error', 
+                'message': 'Quiz name is required'
+            }, status=400)
+
+        # Create quiz record
+        quiz = Quizes.objects.create(
+            user_profile=user_profile,
+            quiz_name=quiz_name,
+            quiz_score=quiz_score,
+            quiz_answers=quiz_answers
+        )
+        
+        return JsonResponse({
+            'status': 'success', 
+            'quiz': {
+                'id': quiz.id,
+                'quiz_name': quiz.quiz_name,
+                'quiz_score': quiz.quiz_score,
+                'created_at': str(quiz.created_at)
+            }
+        }, status=201)
+    
+    except UserProfile.DoesNotExist:
+        return JsonResponse({
+            'status': 'error', 
+            'message': 'User profile not found'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error', 
+            'message': str(e)
+        }, status=400)
