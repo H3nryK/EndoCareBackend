@@ -12,5 +12,5 @@ urlpatterns = [
     path('periods/set/<str:uid>/', views.set_periods, name='set_periods'),
     path('periods/get/<str:uid>/', views.get_periods, name='get_periods'),
     path('save-endobot-message/', views.save_endobot_message, name='save_endobot_message'),
-    path('users/<str:uid>/quizzes/save', views.save_quiz, name='save_quiz'),
+    path('quiz/<str:uid>/', views.save_quiz, name='save_quiz'),
 ]
